@@ -1,6 +1,6 @@
 import pyodbc
 import logging
-from config.settings import DATABASE
+from Config.Senttings import DATABASE
 logger = logging.getLogger(__name__)
 
 class Database:

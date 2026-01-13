@@ -2,8 +2,8 @@ import win32com.client
 import time
 import subprocess
 from pathlib import Path
-from config.settings import SAP_CONFIG, PROCESO_CONFIG
-from HU.HU00_DespliegueAmbiente import ambiente
+from Config.Senttings import SAP_CONFIG, PROCESO_CONFIG
+from HU.HU00_Despliegue import ambiente
 
 class ConexionSAP:
 

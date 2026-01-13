@@ -1,4 +1,4 @@
-from Repositorios.parametros import ParametrosRepository
+from Repositorios.Parametros import ParametrosRepository
 
 _CONFIG_CACHE = None
 
@@ -21,3 +21,7 @@ def in_config(nombre, default=None):
         )
 
     return _CONFIG_CACHE.get(nombre, default)
+
+
+
+                
