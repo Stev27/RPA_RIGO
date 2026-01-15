@@ -141,24 +141,30 @@ class Excel:
 
             return [dict(zip(columnas, fila)) for fila in rows]
         
+    @staticmethod
     def obtener_datos_por_posicion(tabla: str):
-
+        # Corregimos los nombres de las columnas según tu tabla real
         query = f"""
         SELECT TOP 36 *
         FROM PagoArriendos.{tabla}
         WHERE Estado = 'Pendiente'
-            AND OC IS NOT NULL
-        ORDER BY Posicion
+            AND Orden2025 IS NOT NULL
+        ORDER BY CodFin
         """
 
-        with Database.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(query)
+        try:
+            with Database.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query)
 
-            columnas = [col[0] for col in cursor.description]
-            rows = cursor.fetchall()
-            cursor.close()
+                columnas = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+                cursor.close()
 
-            return [dict(zip(columnas, fila)) for fila in rows]
+                # Esto retorna una lista de diccionarios con las llaves correctas
+                return [dict(zip(columnas, fila)) for fila in rows]
+        except Exception as e:
+            print(f"Error al consultar la tabla {tabla}: {e}")
+            return []
         
 
