@@ -1,20 +1,21 @@
-import win32com.client
-import time
-import subprocess
 import re
-from pathlib import Path
+import logging
+import pandas as pd
+from datetime import datetime
+import threading
 from Config.Senttings import SAP_CONFIG
-from Funciones.ConexionSAP import ConexionSAP
-from Funciones.consultarOC import consultarOC
 from Config.init_config import in_config
+from Funciones.ConexionSAP import ConexionSAP
+from Funciones.ConsultarOC import consultarOC
+from Funciones.CargarAnexo import cargar_archivo_gos # Asegúrate de que este archivo exista
 from Repositorios.Excel import Excel as ExcelDB
 
 class HU07_ClasificarOC:
-
     def __init__(self):
         """
-        Inicializa la conexión a SAP y parámetros de tabla.
+        Inicializa los componentes de conexión y logging.
         """
+        self.logger = logging.getLogger("HU07_ClasificarOC")
         self.sap = ConexionSAP(
             SAP_CONFIG.get('SAP_USUARIO'),
             SAP_CONFIG.get('SAP_PASSWORD'),
@@ -23,97 +24,121 @@ class HU07_ClasificarOC:
             in_config('SAP_PATH'),
             in_config('SAP_SISTEMA')
         )
-        
         self.sesion = None
         self.nombreTabla = "BaseMedicamentos"
 
     def ejecutar(self):
-        """
-        Extrae datos, limpia OCs, valida en SAP y clasifica en listas.
-        """
-        taskName = "HU07_ClasificarOC"
-        
-        # --- 1. INICIALIZACIÓN DE LISTAS DE CLASIFICACIÓN ---
-        existeOC = []
-        noExisteOC = []
-        liberadaOC = []
-        noLiberadaOC = []
-        erroresTecnicos = []
+        # Esta lista almacenará los diccionarios de cada fila para el reporte final
+        base_datos_reporte = []
 
         try:
-            # 2. OBTENER REGISTROS DE LA DB
-            print(f"Consultando registros pendientes en {self.nombreTabla}...")
+            # 1. Obtener datos de la base (Excel de entrada)
+            self.logger.info(f"Leyendo registros de {self.nombreTabla}...")
             registros = ExcelDB.obtener_datos_por_posicion(self.nombreTabla)
-
             if not registros:
-                print("No hay registros pendientes en la DB.")
+                self.logger.warning("No se encontraron registros para procesar.")
                 return
 
-            # 3. INICIAR SESIÓN SAP
+            # 2. Iniciar Sesión en SAP
             self.sesion = self.sap.iniciar_sesion_sap()
 
-            # 4. CICLO DE PROCESAMIENTO
+            print("\n>>> INICIANDO PROCESAMIENTO DE ÓRDENES...")
+
             for registro in registros:
                 oc_raw = str(registro.get('Orden2025', ''))
+                proveedor = registro.get('Proveedor', 'Sin Proveedor')
                 cod_fin = registro.get('CodFin', 'N/A')
 
-                # --- LIMPIEZA DE DATOS (REGEX) ---
-                # Buscamos el patrón típico de OC (ej: empieza por 400 y tiene 10 dígitos)
+                # Limpieza de OC con Regex
                 match = re.search(r'400\d{7}', oc_raw)
-                
                 if not match:
-                    print(f"[-] Formato inválido o celda sucia: {oc_raw}")
-                    noExisteOC.append(f"{oc_raw} (ID: {cod_fin})")
+                    base_datos_reporte.append({
+                        "OC": oc_raw, "Proveedor": proveedor, "Monto": 0,
+                        "Estado SAP": "Formato Incorrecto", "Anexo GOS": "N/A"
+                    })
                     continue
-                
-                oc_numero = match.group(0)
-                print(f"\n" + "-"*40)
-                print(f"[*] Procesando OC limpia: {oc_numero} | CodFin: {cod_fin}")
 
-                # --- VALIDACIÓN EN SAP ---
-                # La función consultarOC debe retornar un dict: {"status": "OK/Error", "detalle": "..."}
+                oc_numero = match.group(0)
+                
+                # 3. Consultar OC y Monto en SAP (FASE 1)
                 resultado = consultarOC(self.sesion, oc_numero)
 
-                # --- CLASIFICACIÓN SEGÚN RESULTADO ---
                 if resultado["status"] == "OK":
-                    existeOC.append(oc_numero)
+                    monto = resultado["monto"]
+                    detalle_sap = resultado["detalle"].lower()
                     
-                    # Lógica de liberación (basada en el texto que devuelve tu SAP)
-                    if "liberada" in resultado["detalle"].lower() or "activ" in resultado["detalle"].lower():
-                        print(f"[+] Orden Liberada")
-                        liberadaOC.append(oc_numero)
-                    else:
-                        print(f"[!] Orden No Liberada")
-                        noLiberadaOC.append(oc_numero)
-                
+                    # Verificar si está liberada
+                    es_liberada = any(palabra in detalle_sap for palabra in ["liberada", "active", "aprobada"])
+                    estado_final = "Liberada" if es_liberada else "Pendiente Liberación"
+                    
+                    anexo_status = "No corresponde"
+                    
+                    # 4. Cargar Anexo si está liberada (FASE 2)
+                    if es_liberada:
+                        ruta_pdf = f"C:\\RPA_RIGO\\Anexos\\{oc_numero}.pdf"
+                        # Llamada a la función que maneja el hilo de Windows
+                        exito_carga = cargar_archivo_gos(self.sesion, oc_numero, ruta_pdf, self.logger)
+                        anexo_status = "Cargado Exitosamente" if exito_carga else "Error en Carga"
+                    
+                    # Guardar información para el reporte
+                    base_datos_reporte.append({
+                        "OC": oc_numero,
+                        "Proveedor": proveedor,
+                        "Monto": monto,
+                        "Estado SAP": estado_final,
+                        "Anexo GOS": anexo_status
+                    })
+                    print(f"[*] Procesada OC {oc_numero} - {estado_final}")
+
                 else:
-                    # Manejo de "No existe" o errores de conexión
-                    detalle_error = resultado["detalle"].lower()
-                    if "no existe" in detalle_error:
-                        print(f"[-] SAP informa: La orden no existe.")
-                        noExisteOC.append(oc_numero)
-                    else:
-                        print(f"[x] Error Técnico: {resultado['detalle']}")
-                        erroresTecnicos.append(oc_numero)
+                    # Si la OC no existe o hubo error de red
+                    base_datos_reporte.append({
+                        "OC": oc_numero, "Proveedor": proveedor, "Monto": 0,
+                        "Estado SAP": "No existe / Error", "Anexo GOS": "N/A"
+                    })
+                    print(f"[-] OC {oc_numero} no encontrada.")
 
-            # --- 5. RESUMEN FINAL DE EJECUCIÓN ---
-            print("\n" + "="*50)
-            print("            RESUMEN DE CLASIFICACIÓN")
-            print("="*50)
-            print(f"Total procesados: {len(registros)}")
-            print(f"Existentes:       {len(existeOC)}")
-            print(f"  - Liberadas:    {len(liberadaOC)}")
-            print(f"  - No Liberadas: {len(noLiberadaOC)}")
-            print(f"No Existen:       {len(noExisteOC)}")
-            print(f"Errores Técnicos: {len(erroresTecnicos)}")
-            print("="*50)
-
-            # Opcional: Retornar las listas si otro proceso las necesita
-            return {
-                "liberadas": liberadaOC,
-                "no_existe": noExisteOC,
-                "errores": erroresTecnicos
-            }
+            # 5. Generar Reporte Final (FASE 3)
+            self.generar_reporte_excel(base_datos_reporte)
 
         except Exception as e:
-            print(f"Falla critica en la clase HU07: {e}")
+            self.logger.error(f"Falla crítica en HU07: {e}")
+            print(f"Falla crítica: {e}")
+
+    def generar_reporte_excel(self, lista_datos):
+        """
+        Crea un archivo Excel consolidado y lo guarda en la carpeta de Reportes.
+        """
+        if not lista_datos:
+            print("No hay datos para generar el reporte.")
+            return
+
+        # Crear DataFrame
+        df = pd.DataFrame(lista_datos)
+
+        # Clasificación por montos aprobados (Lógica de negocio)
+        def clasificar_monto(m):
+            if m > 10000000: return "Monto Alto (>10M)"
+            if m > 1000000: return "Monto Medio (1M-10M)"
+            return "Monto Bajo"
+        
+        df['Clasificación Monto'] = df['Monto'].apply(clasificar_monto)
+
+        # Configurar nombre del archivo
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        ruta_reporte = f"C:\\RPA_RIGO\\Reportes\\Reporte_Gestion_HU07_{timestamp}.xlsx"
+
+        try:
+            # Guardar Excel
+            df.to_excel(ruta_reporte, index=False)
+            print(f"\n" + "="*50)
+            print(f"REPORTE GENERADO: {ruta_reporte}")
+            
+            # Resumen por proveedor en consola
+            resumen = df.groupby(['Proveedor', 'Estado SAP']).size()
+            print("\nResumen por Proveedor y Estado:")
+            print(resumen)
+            print("="*50)
+            
+        except Exception as e:
+            print(f"Error al guardar el Excel: {e}")
