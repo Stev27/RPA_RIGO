@@ -2,6 +2,7 @@ import re
 import logging
 import pandas as pd
 from datetime import datetime
+import time
 import threading
 from Config.Senttings import SAP_CONFIG
 from Config.init_config import in_config
@@ -43,12 +44,12 @@ class HU07_ClasificarOC:
             self.sesion = self.sap.iniciar_sesion_sap()
 
             print("\n>>> INICIANDO PROCESAMIENTO DE ÓRDENES...")
-
+            contador = 0
             for registro in registros:
                 oc_raw = str(registro.get('Orden2025', ''))
                 proveedor = registro.get('Proveedor', 'Sin Proveedor')
                 cod_fin = registro.get('CodFin', 'N/A')
-
+                contador =+1
                 # Limpieza de OC con Regex
                 match = re.search(r'400\d{7}', oc_raw)
                 if not match:
@@ -59,26 +60,31 @@ class HU07_ClasificarOC:
                     continue
 
                 oc_numero = match.group(0)
-                
+                    
                 # 3. Consultar OC y Monto en SAP (FASE 1)
                 resultado = consultarOC(self.sesion, oc_numero)
-
+                
                 if resultado["status"] == "OK":
                     monto = resultado["monto"]
                     detalle_sap = resultado["detalle"].lower()
                     
                     # Verificar si está liberada
-                    es_liberada = any(palabra in detalle_sap for palabra in ["liberada", "active", "aprobada"])
+                    es_liberada = any(palabra in detalle_sap for palabra in ["liberada", "active", "concluida"])
                     estado_final = "Liberada" if es_liberada else "Pendiente Liberación"
                     
                     anexo_status = "No corresponde"
                     
                     # 4. Cargar Anexo si está liberada (FASE 2)
                     if es_liberada:
-                        ruta_pdf = f"C:\\RPA_RIGO\\Anexos\\{oc_numero}.pdf"
+                        ruta_pdf = f"\\\\192.168.50.169\\RPA_RIGO_GestionPagodeArrendamientos\\Insumos\\Anexos\\Prueba.txt"
                         # Llamada a la función que maneja el hilo de Windows
                         exito_carga = cargar_archivo_gos(self.sesion, oc_numero, ruta_pdf, self.logger)
                         anexo_status = "Cargado Exitosamente" if exito_carga else "Error en Carga"
+                        
+                        time.sleep(1)
+
+                        self.sesion.findById("wnd[0]/tbar[0]/okcd").text = "/n"
+                        self.sesion.findById("wnd[0]").sendVKey(0)
                     
                     # Guardar información para el reporte
                     base_datos_reporte.append({
@@ -126,7 +132,7 @@ class HU07_ClasificarOC:
 
         # Configurar nombre del archivo
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        ruta_reporte = f"C:\\RPA_RIGO\\Reportes\\Reporte_Gestion_HU07_{timestamp}.xlsx"
+        ruta_reporte = f"\\\\192.168.50.169\\RPA_RIGO_GestionPagodeArrendamientos\\Resultados\\Reporte_Gestion_HU07_{timestamp}.xlsx"
 
         try:
             # Guardar Excel

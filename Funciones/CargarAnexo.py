@@ -14,7 +14,7 @@ def _interaccion_ventana_windows(ruta_archivo, logger):
     while (time.time() - inicio) < 20: # Timeout de 20 segundos
         try:
             # Buscamos la ventana por título (Regex insensible a mayúsculas)
-            ventana = desktop.window(title_re="(?i)Import.*file.*")
+            ventana = desktop.window(title_re="(?i)Importar.*fichero.*")
             if ventana.exists():
                 ventana.set_focus()
                 time.sleep(1)
@@ -39,6 +39,7 @@ def cargar_archivo_gos(sesion, num_oc, ruta_archivo, logger):
     try:
         # 1. Navegar y cargar OC
         sesion.findById("wnd[0]/tbar[0]/okcd").text = "/n"
+        sesion.findById("wnd[0]").sendVKey(0)
         sesion.findById("wnd[0]/tbar[0]/okcd").text = "ME22N"
         sesion.findById("wnd[0]").sendVKey(0)
         

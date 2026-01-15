@@ -148,8 +148,6 @@ class Excel:
         SELECT TOP 36 *
         FROM PagoArriendos.{tabla}
         WHERE Estado = 'Pendiente'
-            AND Orden2025 IS NOT NULL
-        ORDER BY CodFin
         """
 
         try:

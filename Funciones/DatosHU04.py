@@ -9,11 +9,6 @@ def consultar_datos_hu04(sesion, numeroOC):
     """
     try:
         # Navegación a la transacción
-        sesion.findById("wnd[0]/tbar[0]/okcd").text="/n"
-        sesion.findById("wnd[0]").sendVKey(0)
-
-        time.sleep(1)
-
         sesion.findById("wnd[0]/tbar[0]/okcd").text = "/nME23N"
         sesion.findById("wnd[0]").sendVKey(0)
         
@@ -25,7 +20,7 @@ def consultar_datos_hu04(sesion, numeroOC):
         
         # 1. Obtener Fecha de Creación (Cabecera -> Pestaña Datos Org. o similar según tu Layout)
         # Ajustamos el ID al campo de fecha de documento (BEDAT)
-        fecha_raw = sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0010/subSUB2:SAPLMEGUI:0015/subSUB3:SAPLMEGUI:0085/txtMEPO1211-BEDAT").text
+        fecha_raw = sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0015/subSUB0:SAPLMEGUI:0030/subSUB1:SAPLMEGUI:1105/ctxtMEPO_TOPLINE-BEDAT").text
         fecha_creacion = datetime.strptime(fecha_raw, "%d.%m.%Y")
         dias_mora = (datetime.now() - fecha_creacion).days
 
@@ -33,7 +28,7 @@ def consultar_datos_hu04(sesion, numeroOC):
         facturada = False
         try:
             # Seleccionar pestaña Historial (T7)
-            sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0010/subSUB3:SAPLMEGUI:0020/subSUB1:SAPLMEGUI:0032/tabsTABSTRIP_LINE/tabpT\07").select()
+            sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0015/subSUB3:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1301/subSUB2:SAPLMEGUI:1303/tabsITEM_DETAIL/tabpTABIDT13").select()
             grid = sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0010/subSUB3:SAPLMEGUI:0020/subSUB1:SAPLMEGUI:0032/tabsTABSTRIP_LINE/tabpT\07/ssubSUB0:SAPLMEGUI:0071/cntlGRIDCONTROL/shellcont/shell")
             
             for i in range(grid.RowCount):

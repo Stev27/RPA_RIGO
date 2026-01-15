@@ -30,10 +30,10 @@ def consultarOC(sesion, numeroOC):
         try:
             # El campo de estatus suele estar en la cabecera
             # Nota: Los IDs pueden variar levemente según la versión de SAP
-            estado_texto = sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0010/subSUB2:SAPLMEGUI:0015/subSUB3:SAPLMEGUI:0085/txtMEPO1211-STATU").text
+            estado_texto = sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0010/subSUB1:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1102/tabsHEADER_DETAIL/tabpTABHDT10/ssubTABSTRIPCONTROL2SUB:SAPLMEGUI:1232/txtMEPO1232-STATUS01").text
             
             # El campo de valor neto (Monto)
-            monto_raw = sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0010/subSUB2:SAPLMEGUI:0015/subSUB3:SAPLMEGUI:0085/txtMEPO1211-NETWR").text
+            monto_raw = sesion.findById("wnd[0]/usr/subSUB0:SAPLMEGUI:0010/subSUB1:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1102/tabsHEADER_DETAIL/tabpTABHDT10/ssubTABSTRIPCONTROL2SUB:SAPLMEGUI:1232/ssubHEADER_CUM_2:SAPLMEGUI:1235/txtMEPO1235-VALUE01").text
             
             # Limpieza del monto (Ej: "1.500.250,00" -> 1500250.0)
             monto_limpio = float(monto_raw.replace(".", "").replace(",", ".").strip())
