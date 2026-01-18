@@ -6,8 +6,8 @@ from HU.HU05_GestionAnexos import HU05_CargueSQL
 from HU.HU03_OCSinFactura import HU03_DiagnosticoCierre
 
 if __name__ == "__main__":
-    """pruebaExcel=HU07_ClasificarOC()
-    pruebaExcel.ejecutar()"""
+    pruebaExcel=HU07_ClasificarOC()
+    pruebaExcel.ejecutar()
 
     """ejecucionHu04=HU04_Auditoria()
     ejecucionHu04.ejecutar()"""
@@ -21,6 +21,6 @@ if __name__ == "__main__":
     ejecucionHu03.procesar_desde_excel(nombre_archivo)"""
 
     
-    ruta = r"\\192.168.50.169\RPA_RIGO_GestionPagodeArrendamientos\Resultados\Reporte_HU03_Cierre_20260116_1306.xlsx"
-    HU05_CargueSQL.ejecutar_cargue_desde_excel(ruta)
+    """ruta = r"\\192.168.50.169\RPA_RIGO_GestionPagodeArrendamientos\Resultados\Reporte_HU03_Cierre_20260116_1306.xlsx"
+    HU05_CargueSQL.ejecutar_cargue_desde_excel(ruta)"""
     
