@@ -7,7 +7,7 @@ import threading
 from Config.Senttings import SAP_CONFIG
 from Config.init_config import in_config
 from Funciones.ConexionSAP import ConexionSAP
-from Funciones.ConsultarOC import consultarOC
+from Funciones.consultarOC import consultarOC
 from Funciones.CargarAnexo import cargar_archivo_gos # Asegúrate de que este archivo exista
 from Repositorios.Excel import Excel as ExcelDB
 
