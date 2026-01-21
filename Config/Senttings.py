@@ -47,6 +47,7 @@ DATABASE = {
 
 CADENA ={
     "CADENA_USUARIO": os.getenv('CADENA_USUARIO'),
-    "CADENA_CONTRASEÑA": os.getenv('CADENA_CONTRASEÑA')
+    "CADENA_CONTRASEÑA": os.getenv('CADENA_CONTRASEÑA'),
+    "CADENA_RUTA": os.getenv('CADENA_RUTA')
 }
 
