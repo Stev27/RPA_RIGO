@@ -2,8 +2,31 @@ from Funciones.ConexionSAP import ConexionSAP
 from Funciones.LeerXML import LectorFacturaXML
 from Funciones.ME2L import TransaccionME2L
 from Funciones.MIGO import TransaccionMIGO
-from Config.Senttings import SAP_CONFIG
+from Config.Senttings import SAP_CONFIG, CADENA
 from Config.init_config import in_config
+from Funciones.DescargarXML import login_colsubsidio, realizar_consulta, descargar_xml_final
+
+
+class Facturas:
+    def __init__(self):
+        self.sap=ConexionSAP(
+            SAP_CONFIG.get('SAP_USUARIO'),
+            SAP_CONFIG.get('SAP_PASSWORD'),
+            in_config('SAP_CLIENTE'),
+            in_config('SAP_IDIOMA'),
+            in_config('SAP_PATH'),
+            in_config('SAP_SISTEMA')
+        )
+        self.sesion = None
+
+        self.cadenaUsuario=CADENA.get('CADENA_USUARIO')
+        self.cadenaContraseña=CADENA.get('CADENA_CONTRASEÑA')
+        self.cadenaRuta=CADENA.get('CADENA_RUTA')
+
+    def descargar_XML(self):
+        pass
+
+
 
 
 def main():
