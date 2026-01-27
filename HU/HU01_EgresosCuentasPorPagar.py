@@ -1,4 +1,5 @@
 from Funciones.ConexionSAP import ConexionSAP
+from datetime import datetime
 from Funciones.LeerXML import LectorFacturaXML
 from Funciones.ME2L import TransaccionME2L
 from Funciones.MIGO import TransaccionMIGO
@@ -24,32 +25,46 @@ class Facturas:
         self.cadenaRuta=CADENA.get('CADENA_RUTA')
 
     def descargar_XML(self):
-        pass
+
+        hoy =datetime.today()
+
+        fecha_inicio=hoy.replace(day=1).strftime("%Y/%m/%d")
+        fecha_final =hoy.strftime("%Y/%m/%d")
+
+        nro_documento="4001249504"
+        try:
+            realizar_consulta(login_colsubsidio(self.cadenaUsuario, self.cadenaContraseña, self.cadenaRuta), fecha_inicio, fecha_final, nro_documento)
+        except Exception:
+            print("error al ingresar al aplicativo cadena")
+        
+
+        
+        
 
 
 
 
-def main():
-    # 1. Conexión
-    sap = ConexionSAP(
-                SAP_CONFIG.get('SAP_USUARIO'),
-                SAP_CONFIG.get('SAP_PASSWORD'),
-                in_config('SAP_CLIENTE'),
-                in_config('SAP_IDIOMA'),
-                in_config('SAP_PATH'),
-                in_config('SAP_SISTEMA')
-            )
-    sap.iniciar_sesion_sap()
+# def main():
+#     # 1. Conexión
+#     sap = ConexionSAP(
+#                 SAP_CONFIG.get('SAP_USUARIO'),
+#                 SAP_CONFIG.get('SAP_PASSWORD'),
+#                 in_config('SAP_CLIENTE'),
+#                 in_config('SAP_IDIOMA'),
+#                 in_config('SAP_PATH'),
+#                 in_config('SAP_SISTEMA')
+#             )
+#     sap.iniciar_sesion_sap()
     
-    # 2. Leer XML (Suponiendo que está en tu carpeta de Insumos)
-    xml_path = r"C:\ProgramData\RIGO\Insumo\ad090063145002525021701C7.xml"
-    datos = LectorFacturaXML(xml_path).obtener_datos()
+#     # 2. Leer XML (Suponiendo que está en tu carpeta de Insumos)
+#     xml_path = r"C:\ProgramData\RIGO\Insumo\ad090063145002525021701C7.xml"
+#     datos = LectorFacturaXML(xml_path).obtener_datos()
     
-    # 3. Buscar OC
-    me2l = TransaccionME2L(sap)
-    oc = me2l.buscar_oc_activa(datos['nit'])
+#     # 3. Buscar OC
+#     me2l = TransaccionME2L(sap)
+#     oc = me2l.buscar_oc_activa(datos['nit'])
     
-    # 4. Registrar MIGO
-    if oc:
-        migo = TransaccionMIGO(sap)
-        migo.contabilizar_entrada(oc, datos['factura'])
+#     # 4. Registrar MIGO
+#     if oc:
+#         migo = TransaccionMIGO(sap)
+#         migo.contabilizar_entrada(oc, datos['factura'])
