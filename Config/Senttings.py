@@ -17,14 +17,7 @@ SAP_CONFIG = {
 }
 
 # Rutas del proyecto
-RUTAS = {
-    'PATH_PROYECTO': os.getenv('PATH_PROYECTO', 'C:/ProgramData/RIGO'),
-    'PATH_AUDIT': os.getenv('PATH_AUDIT', 'C:/ProgramData/RIGO/Audit'),
-    'PATH_LOGS': os.getenv('PATH_LOGS', 'C:/ProgramData/RIGO/Audit/Logs'),
-    'PATH_TEMP': os.getenv('PATH_TEMP', 'C:/ProgramData/RIGO/Temp'),
-    'PATH_INSUMO': os.getenv('PATH_INSUMO', 'C:/ProgramData/RIGO/Insumo'),
-    'PATH_RESULTADO': os.getenv('PATH_RESULTADO', 'C:/ProgramData/RIGO/Resultado')
-}
+
 
 # Configuración del proceso
 PROCESO_CONFIG = {
